@@ -11,6 +11,9 @@ import {
   DateRange as DateRangeIcon,
   Subject as SubjectIcon
 } from '@mui/icons-material';
+import { DatePicker } from '@mui/x-date-pickers/DatePicker';
+import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
+import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import apiClient from '../api/apiClient';
 import { useAuth } from '../context/AuthContext';
 import dayjs from 'dayjs';
@@ -214,31 +217,31 @@ const NewRequestPopup = ({ open, onClose, initialAssignedToEmail }: NewRequestPo
               display: 'flex',
               alignItems: 'center',
               gap: 1,
-              ...{ bgcolor: 'var(--accent-bg)', color: 'var(--text-h)' }
+              bgcolor: 'var(--accent-bg)',
+              color: 'var(--text-h)'
             }}>
               <DateRangeIcon sx={{ fontSize: 20, opacity: 0.8 }} />
               <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
                 <Typography variant="caption" sx={{ fontSize: '0.7rem', fontWeight: 700, color: 'inherit', opacity: 0.7, mb: -0.5 }}>
                   Due Date
                 </Typography>
-                <TextField
-                  type="date"
-                  value={formData.requestedByDate}
-                  onChange={(e) => setFormData({ ...formData, requestedByDate: e.target.value })}
-                  variant="standard"
-                  fullWidth
-                  slotProps={{
-                    input: {
-                      disableUnderline: true,
-                      sx: {
-                        fontSize: '0.85rem',
-                        fontWeight: 600,
-                        color: 'inherit',
-                        '& input': { p: 0, height: '1.2rem' }
+                <LocalizationProvider dateAdapter={AdapterDayjs}>
+                  <DatePicker
+                    value={formData.requestedByDate ? dayjs(formData.requestedByDate) : null}
+                    onChange={(newValue) => setFormData({ ...formData, requestedByDate: newValue ? newValue.format('YYYY-MM-DD') : '' })}
+                    slotProps={{
+                      textField: {
+                        variant: 'standard',
+                        fullWidth: true,
+                        sx: {
+                          '& .MuiInput-root': { fontSize: '0.85rem', fontWeight: 600, color: 'inherit', mt: 0 },
+                          '& .MuiInput-input': { p: 0 },
+                          '& .MuiSvgIcon-root': { color: 'inherit' }
+                        }
                       }
-                    }
-                  } as any}
-                />
+                    } as any}
+                  />
+                </LocalizationProvider>
               </Box>
             </Box>
 
