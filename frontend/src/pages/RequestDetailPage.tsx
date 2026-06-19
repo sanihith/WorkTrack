@@ -17,7 +17,7 @@ import {
   FormControl,
   Select,
   MenuItem,
-  Checkbox,
+  Menu,
 } from "@mui/material";
 import {
   AttachFile,
@@ -30,8 +30,7 @@ import {
   CheckCircle as CheckCircleIcon,
   AssignmentInd as AssignmentIcon,
   Delete as DeleteIcon,
-  CheckBoxOutlineBlank as CheckBoxOutlineBlankIcon,
-  CheckBox as CheckBoxIcon
+  MoreVert as MoreVertIcon
 } from "@mui/icons-material";
 import DashboardLayout from '../components/DashboardLayout';
 import DueDateBadge from '../components/DueDateBadge';
@@ -70,8 +69,9 @@ const RequestDetailPage = () => {
   const [commentText, setCommentText] = useState('');
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
-  const [isSelecting, setIsSelecting] = useState(false);
-  const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
+  const [menuAnchor, setMenuAnchor] = useState<null | HTMLElement>(null);
+  const [menuMsgId, setMenuMsgId] = useState<number | null>(null);
+  const [replyingTo, setReplyingTo] = useState<{ id: number; name: string; content: string } | null>(null);
 
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -82,18 +82,15 @@ const RequestDetailPage = () => {
     return msg.createdBy?.id === user.id;
   };
 
-  const toggleSelection = (msgId: number) => {
-    setSelectedIds(prev => {
-      const next = new Set(prev);
-      if (next.has(msgId)) next.delete(msgId);
-      else next.add(msgId);
-      return next;
-    });
+  const openMessageMenu = (event: React.MouseEvent<HTMLElement>, msgId: number) => {
+    event.stopPropagation();
+    setMenuAnchor(event.currentTarget);
+    setMenuMsgId(msgId);
   };
 
-  const exitSelectionMode = () => {
-    setIsSelecting(false);
-    setSelectedIds(new Set());
+  const closeMessageMenu = () => {
+    setMenuAnchor(null);
+    setMenuMsgId(null);
   };
 
   const { data: allUsers = [] } = useQuery({
@@ -148,6 +145,7 @@ const RequestDetailPage = () => {
       apiClient.post(`/requests/${id}/comments`, { content }),
     onSuccess: () => {
       setCommentText('');
+      setReplyingTo(null);
       refetchComments();
     }
   });
@@ -157,7 +155,7 @@ const RequestDetailPage = () => {
       apiClient.delete(`/requests/${id}/comments`, { data: { ids } }),
     onSuccess: () => {
       refetchComments();
-      exitSelectionMode();
+      setReplyingTo(null);
     }
   });
 
@@ -175,7 +173,11 @@ const RequestDetailPage = () => {
     if (!commentText.trim() && !selectedFile) return;
     try {
       setIsUploading(true);
-      const content = commentText.trim() || (selectedFile ? `Shared an attachment: ${selectedFile.name}` : "");
+      let content = commentText.trim() || (selectedFile ? `Shared an attachment: ${selectedFile.name}` : "");
+      if (replyingTo) {
+        const replySnippet = replyingTo.content.length > 40 ? replyingTo.content.slice(0, 40) + '...' : replyingTo.content;
+        content = `> Replying to ${replyingTo.name}: "${replySnippet}"\n\n${content}`;
+      }
       const commentRes = await commentMutation.mutateAsync(content);
       if (selectedFile && commentRes.data?.id) {
         const formData = new FormData();
@@ -441,7 +443,7 @@ const RequestDetailPage = () => {
             minHeight: 0,
             border: '1px solid var(--border)'
           }}>
-            {/* Chat Header / Selection Toolbar */}
+            {/* Chat Header */}
             <Box sx={{
               background: 'linear-gradient(135deg, #1e3a5f 0%, #2563eb 100%)',
               px: 3,
@@ -449,62 +451,30 @@ const RequestDetailPage = () => {
               display: 'flex',
               alignItems: 'center',
               gap: 2
-            }}>
-              {isSelecting ? (
-                <>
-                  <IconButton size="small" onClick={exitSelectionMode} sx={{ color: '#fff' }}>
-                    <CloseIcon />
-                  </IconButton>
-                  <Typography sx={{ color: '#fff', fontWeight: 700, fontSize: '0.9rem', flex: 1 }}>
-                    {selectedIds.size} selected
-                  </Typography>
-                  <IconButton
-                    size="small"
-                    onClick={() => {
-                      if (selectedIds.size > 0) {
-                        deleteCommentsMutation.mutate(Array.from(selectedIds));
-                      }
-                    }}
-                    disabled={selectedIds.size === 0 || deleteCommentsMutation.isPending}
-                    sx={{ color: '#fff' }}
-                  >
-                    <DeleteIcon />
-                  </IconButton>
-                </>
-              ) : (
-                <>
-                  <Avatar sx={{ bgcolor: 'rgba(255,255,255,0.2)', width: 42, height: 42, border: '2px solid rgba(255,255,255,0.3)' }}>
-                    {request.createdBy?.name?.charAt(0) || '?'}
-                  </Avatar>
-                  <Box sx={{ flex: 1, minWidth: 0 }}>
-                    <Typography sx={{ fontWeight: 700, color: '#fff', fontSize: '0.95rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                      {request.subject}
-                    </Typography>
-                    <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.7)', fontSize: '0.75rem' }}>
-                      {request.createdBy?.name}
-                      {request.assignedTo ? ` → ${request.assignedTo.name}` : ' → Unassigned'}
-                    </Typography>
-                  </Box>
-                  <Chip
-                    label={getStatusLabel(request.status)}
-                    size="small"
-                    sx={{
-                      ...getStatusChipStyle(request.status),
-                      fontWeight: 700,
-                      fontSize: '0.65rem',
-                      borderRadius: 1.5,
-                      '& .MuiChip-label': { px: 1 }
-                    }}
-                  />
-                  <Button
-                    size="small"
-                    onClick={() => setIsSelecting(true)}
-                    sx={{ color: '#fff', textTransform: 'none', fontSize: '0.75rem', fontWeight: 600 }}
-                  >
-                    Select
-                  </Button>
-                </>
-              )}
+            }}> 
+              <Avatar sx={{ bgcolor: 'rgba(255,255,255,0.2)', width: 42, height: 42, border: '2px solid rgba(255,255,255,0.3)' }}>
+                {request.createdBy?.name?.charAt(0) || '?'}
+              </Avatar>
+              <Box sx={{ flex: 1, minWidth: 0 }}>
+                <Typography sx={{ fontWeight: 700, color: '#fff', fontSize: '0.95rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                  {request.subject}
+                </Typography>
+                <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.7)', fontSize: '0.75rem' }}>
+                  {request.createdBy?.name}
+                  {request.assignedTo ? ` → ${request.assignedTo.name}` : ' → Unassigned'}
+                </Typography>
+              </Box>
+              <Chip
+                label={getStatusLabel(request.status)}
+                size="small"
+                sx={{
+                  ...getStatusChipStyle(request.status),
+                  fontWeight: 700,
+                  fontSize: '0.65rem',
+                  borderRadius: 1.5,
+                  '& .MuiChip-label': { px: 1 }
+                }}
+              />
             </Box>
 
             {/* Messages Area */}
@@ -601,14 +571,6 @@ const RequestDetailPage = () => {
                 const deletable = canDeleteComment(msg);
                 return (
                   <Box key={msg.id} sx={{ display: 'flex', justifyContent: isSelf ? 'flex-end' : 'flex-start', alignItems: 'flex-end', gap: 1 }}>
-                    {isSelecting && deletable && (
-                      <Checkbox
-                        checked={selectedIds.has(msg.id)}
-                        onChange={() => toggleSelection(msg.id)}
-                        sx={{ color: isSelf ? 'rgba(255,255,255,0.9)' : 'var(--accent)', p: 0.5 }}
-                        size="small"
-                      />
-                    )}
                     {!isSelf && (
                       <Avatar sx={{ bgcolor: 'var(--accent)', width: 32, height: 32, fontSize: '0.8rem', flexShrink: 0 }}>
                         {msg.createdBy?.name?.charAt(0)}
@@ -617,14 +579,31 @@ const RequestDetailPage = () => {
                     <Box sx={{ maxWidth: '72%' }}>
                       <Box
                         sx={{
+                          position: 'relative',
                           bgcolor: isSelf ? 'var(--accent)' : '#fff',
                           color: isSelf ? '#fff' : 'inherit',
                           borderRadius: isSelf ? '16px 0 16px 16px' : '0 16px 16px 16px',
                           p: 2,
                           boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
-                          border: isSelf ? 'none' : '1px solid rgba(0,0,0,0.05)'
+                          border: isSelf ? 'none' : '1px solid rgba(0,0,0,0.05)',
+                          pr: '28px'
                         }}
                       >
+                        <IconButton
+                          size="small"
+                          onClick={(e) => openMessageMenu(e, msg.id)}
+                          sx={{
+                            position: 'absolute',
+                            top: 4,
+                            right: 4,
+                            p: 0.25,
+                            opacity: 0.5,
+                            color: isSelf ? 'rgba(255,255,255,0.9)' : 'var(--text-muted)',
+                            '&:hover': { opacity: 1, bgcolor: isSelf ? 'rgba(255,255,255,0.15)' : 'var(--accent-bg)' }
+                          }}
+                        >
+                          <MoreVertIcon sx={{ fontSize: 16 }} />
+                        </IconButton>
                         {!isSelf && (
                           <Typography variant="caption" sx={{ fontWeight: 700, color: 'var(--accent)', display: 'block', mb: 0.25, fontSize: '0.75rem' }}>
                             {msg.createdBy?.name}
@@ -670,6 +649,23 @@ const RequestDetailPage = () => {
                 );
               })}
             </Box>
+
+            {/* Reply Bar */}
+            {replyingTo && (
+              <Box sx={{ px: 2, pt: 1, pb: 0, bgcolor: '#fff', borderTop: '1px solid var(--border)', display: 'flex', alignItems: 'center', gap: 1 }}>
+                <Box sx={{ flex: 1, bgcolor: 'var(--accent-bg)', borderRadius: 2, px: 1.5, py: 0.75, display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <Typography variant="caption" sx={{ color: 'var(--accent)', fontWeight: 600 }}>
+                    Replying to {replyingTo.name}
+                  </Typography>
+                  <Typography variant="caption" sx={{ color: 'var(--text-muted)', flex: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                    {replyingTo.content}
+                  </Typography>
+                </Box>
+                <IconButton size="small" onClick={() => setReplyingTo(null)} sx={{ color: 'var(--text-muted)' }}>
+                  <CloseIcon fontSize="small" />
+                </IconButton>
+              </Box>
+            )}
 
             {/* Input Bar */}
             <Box sx={{
@@ -898,6 +894,47 @@ const RequestDetailPage = () => {
           </Box>
         </Box>
       </Box>
+
+      {/* Message Actions Menu */}
+      <Menu
+        anchorEl={menuAnchor}
+        open={Boolean(menuAnchor)}
+        onClose={closeMessageMenu}
+        anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
+        transformOrigin={{ vertical: 'top', horizontal: 'right' }}
+        PaperProps={{ sx: { borderRadius: 2, boxShadow: '0 4px 20px rgba(0,0,0,0.15)' } }}
+      >
+        {(() => {
+          const msg = comments.find((m: any) => m.id === menuMsgId);
+          if (!msg) return null;
+          return (
+            <>
+              <MenuItem
+                onClick={() => {
+                  setReplyingTo({ id: msg.id, name: msg.createdBy?.name || 'Unknown', content: msg.content });
+                  closeMessageMenu();
+                }}
+                sx={{ fontSize: '0.85rem', gap: 1, minWidth: 140 }}
+              >
+                <ArrowBackIcon sx={{ fontSize: 18, transform: 'rotate(90deg)' }} />
+                Reply
+              </MenuItem>
+              {canDeleteComment(msg) && (
+                <MenuItem
+                  onClick={() => {
+                    deleteCommentsMutation.mutate([msg.id]);
+                    closeMessageMenu();
+                  }}
+                  sx={{ fontSize: '0.85rem', color: 'var(--error)', gap: 1, minWidth: 140 }}
+                >
+                  <DeleteIcon sx={{ fontSize: 18 }} />
+                  Delete
+                </MenuItem>
+              )}
+            </>
+          );
+        })()}
+      </Menu>
     </DashboardLayout>
   );
 };
