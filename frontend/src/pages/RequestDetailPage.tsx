@@ -532,13 +532,37 @@ const RequestDetailPage = () => {
                 <Box sx={{ maxWidth: '72%' }}>
                   <Box
                     sx={{
+                      position: 'relative',
                       bgcolor: '#fff',
                       borderRadius: '0 16px 16px 16px',
                       p: 2,
+                      pr: '28px',
                       boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
                       border: '1px solid rgba(0,0,0,0.05)'
                     }}
                   >
+                    <IconButton
+                      size="small"
+                      onClick={(e) =>
+                        openMessageMenu(e, {
+                          id: -request.id,
+                          createdBy: request.createdBy,
+                          content: request.explanation || 'No description provided.',
+                          type: 'USER'
+                        })
+                      }
+                      sx={{
+                        position: 'absolute',
+                        top: 4,
+                        right: 4,
+                        p: 0.25,
+                        opacity: 0.5,
+                        color: 'var(--text-muted)',
+                        '&:hover': { opacity: 1, bgcolor: 'var(--accent-bg)' }
+                      }}
+                    >
+                      <MoreVertIcon sx={{ fontSize: 16 }} />
+                    </IconButton>
                     <Typography variant="caption" sx={{ fontWeight: 700, color: 'var(--accent)', display: 'block', mb: 0.5 }}>
                       {request.createdBy?.name}
                     </Typography>
@@ -666,16 +690,6 @@ const RequestDetailPage = () => {
                                 >
                                   {att.fileName}
                                 </Button>
-                                {canDeleteAttachment() && (
-                                  <IconButton
-                                    size="small"
-                                    onClick={() => deleteAttachmentMutation.mutate(att.id)}
-                                    disabled={deleteAttachmentMutation.isPending}
-                                    sx={{ color: isSelf ? '#fff' : 'var(--error)', '&:hover': { bgcolor: isSelf ? 'rgba(255,255,255,0.15)' : 'rgba(220,38,38,0.08)' }, p: 0.5 }}
-                                  >
-                                    <DeleteIcon sx={{ fontSize: 16 }} />
-                                  </IconButton>
-                                )}
                               </Box>
                             ))}
                           </Box>
@@ -985,7 +999,7 @@ const RequestDetailPage = () => {
               <ArrowBackIcon sx={{ fontSize: 18, transform: 'rotate(90deg)' }} />
               Reply
             </MenuItem>
-            {canDeleteComment(menuMessage) && (
+            {comments.some((m: any) => m.id === menuMessage.id) && canDeleteComment(menuMessage) && (
               <MenuItem
                 onClick={() => {
                   deleteCommentsMutation.mutate([menuMessage.id]);
