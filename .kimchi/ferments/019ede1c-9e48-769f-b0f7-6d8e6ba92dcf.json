@@ -1,0 +1,269 @@
+{
+  "id": "019ede1c-9e48-769f-b0f7-6d8e6ba92dcf",
+  "name": "WhatsApp-like message delete",
+  "description": "In RequestDetailPage, add a WhatsApp-like message selection and bulk delete feature. Users should be able to long-press or click to select multiple messages (comments) and delete them with a delete button that appears in a selection toolbar. This needs:\n1. Backend: add a DELETE /api/requests/{requestId}/comments/{commentId} endpoint in CommentController\n2. Backend: possibly add a bulk delete endpoint \n3. Frontend: add selection mode state, checkboxes on messages, selection toolbar with delete button and selected count, and delete mutation in RequestDetailPage\n4. Frontend: only allow deleting own messages or messages if user is manager/creator\n5. System comments should not be deletable",
+  "status": "complete",
+  "worktree": {
+    "path": "/home/pulse1/WorkTrack"
+  },
+  "scoping": {
+    "goal": {
+      "answer": "Add a WhatsApp-style message selection and bulk delete feature to RequestDetailPage so users can select multiple comments and delete them with a toolbar.",
+      "confirmedAt": "2026-06-19T04:26:04.309Z"
+    },
+    "criteria": {
+      "answer": "Backend DELETE /api/requests/{requestId}/comments accepts a bulk payload {ids: [...]} and validates permissions\nBackend rejects deletion of system comments and comments not owned by the user (unless user is manager)\nFrontend shows a 'Select' button in the messages area header that toggles selection mode\nCheckboxes appear only on deletable message bubbles while in selection mode\nSelection toolbar renders with selected-count label and a Delete icon button\nClicking Delete calls the bulk endpoint, refreshes the comment list, and exits selection mode\nSystem comments are never selectable or deletable\nTypeScript compiles with no errors",
+      "confirmedAt": "2026-06-19T04:26:04.309Z"
+    },
+    "constraints": {
+      "answer": "Only own comments or manager can delete, System comments are not deletable, New Request popup due date field styling remains unchanged (from prior work)",
+      "confirmedAt": "2026-06-19T04:26:04.309Z"
+    },
+    "phases": {
+      "answer": "Backend bulk delete endpoint, Frontend selection UI, Frontend delete wiring",
+      "confirmedAt": "2026-06-19T04:26:04.309Z"
+    },
+    "assumptions": {
+      "answer": "The existing comment list in RequestDetailPage renders with msg.id available; Frontend already uses @tanstack/react-query for mutations; User confirmed: selection mode entered via header 'Select' button; User confirmed: bulk delete endpoint (DELETE with body {ids: [...]}); User confirmed: no confirmation dialog before delete",
+      "confirmedAt": "2026-06-19T04:26:04.309Z"
+    }
+  },
+  "phases": [
+    {
+      "id": "phase-1",
+      "index": 1,
+      "name": "Backend bulk delete endpoint",
+      "goal": "Add a DELETE mapping to CommentController that accepts {ids: [...]}, validates permissions, filters system comments, and performs bulk deletion",
+      "description": "",
+      "parallel": false,
+      "status": "completed",
+      "steps": [
+        {
+          "id": "step-1",
+          "index": 1,
+          "description": "Create BulkDeleteCommentsDto with List<Long> ids",
+          "status": "verified",
+          "verification": {
+            "command": "grep -q 'class BulkDeleteCommentsDto' /home/pulse1/WorkTrack/backend/src/main/java/com/taskportal/controller/CommentController.java || grep -q 'ids' /home/pulse1/WorkTrack/backend/src/main/java/com/taskportal/controller/CommentController.java",
+            "retries": 2,
+            "retryDelayMs": 1000
+          },
+          "parallel": false,
+          "startedAt": "2026-06-19T04:26:48.715Z",
+          "completedAt": "2026-06-19T04:29:08.478Z",
+          "result": {
+            "success": true,
+            "exitCode": 0,
+            "stdout": "",
+            "stderr": "",
+            "completedAt": "2026-06-19T04:29:08.478Z"
+          }
+        },
+        {
+          "id": "step-2",
+          "index": 2,
+          "description": "Add @DeleteMapping to CommentController that iterates ids, validates each comment is deletable (not system, own or manager), deletes valid ones, and returns 200",
+          "status": "verified",
+          "verification": {
+            "command": "grep -q '@DeleteMapping' /home/pulse1/WorkTrack/backend/src/main/java/com/taskportal/controller/CommentController.java",
+            "retries": 2,
+            "retryDelayMs": 1000
+          },
+          "parallel": false,
+          "startedAt": "2026-06-19T04:29:21.871Z",
+          "completedAt": "2026-06-19T04:29:39.616Z",
+          "result": {
+            "success": true,
+            "exitCode": 0,
+            "stdout": "",
+            "stderr": "",
+            "completedAt": "2026-06-19T04:29:39.616Z"
+          }
+        }
+      ],
+      "startedAt": "2026-06-19T04:26:15.546Z",
+      "completedAt": "2026-06-19T04:29:46.652Z",
+      "summary": "Backend bulk delete endpoint complete. Added BulkDeleteCommentsRequest DTO and @DeleteMapping deleteComments method to CommentController. It validates permissions (owner or manager/director/admin), skips system comments, skips non-existent or cross-request comments, and returns deleted/skipped counts. Maven compile passed."
+    },
+    {
+      "id": "phase-2",
+      "index": 2,
+      "name": "Frontend selection UI",
+      "goal": "Add selection mode state, 'Select' button, checkboxes, and selection toolbar to RequestDetailPage",
+      "description": "",
+      "parallel": false,
+      "status": "completed",
+      "steps": [
+        {
+          "id": "step-1",
+          "index": 1,
+          "description": "Add selection mode state vars (isSelecting, selectedIds Set<number>) and toggle handler to RequestDetailPage",
+          "status": "verified",
+          "verification": {
+            "command": "grep -q 'isSelecting' /home/pulse1/WorkTrack/frontend/src/pages/RequestDetailPage.tsx",
+            "retries": 2,
+            "retryDelayMs": 1000
+          },
+          "parallel": false,
+          "startedAt": "2026-06-19T04:30:25.153Z",
+          "completedAt": "2026-06-19T04:31:24.671Z",
+          "result": {
+            "success": true,
+            "exitCode": 0,
+            "stdout": "",
+            "stderr": "",
+            "completedAt": "2026-06-19T04:31:24.671Z"
+          }
+        },
+        {
+          "id": "step-2",
+          "index": 2,
+          "description": "Render 'Select' button in the messages area header; clicking it toggles isSelecting",
+          "status": "verified",
+          "verification": {
+            "command": "grep -q 'Select' /home/pulse1/WorkTrack/frontend/src/pages/RequestDetailPage.tsx",
+            "retries": 2,
+            "retryDelayMs": 1000
+          },
+          "parallel": false,
+          "startedAt": "2026-06-19T04:31:38.764Z",
+          "completedAt": "2026-06-19T04:34:59.715Z",
+          "result": {
+            "success": true,
+            "exitCode": 0,
+            "stdout": "",
+            "stderr": "",
+            "completedAt": "2026-06-19T04:34:59.715Z"
+          }
+        },
+        {
+          "id": "step-3",
+          "index": 3,
+          "description": "Render MUI Checkbox on each user comment when isSelecting is true (hidden for system comments and non-own comments unless manager)",
+          "status": "verified",
+          "verification": {
+            "command": "grep -q 'Checkbox' /home/pulse1/WorkTrack/frontend/src/pages/RequestDetailPage.tsx",
+            "retries": 2,
+            "retryDelayMs": 1000
+          },
+          "parallel": false,
+          "startedAt": "2026-06-19T04:35:29.148Z",
+          "completedAt": "2026-06-19T04:36:45.346Z",
+          "result": {
+            "success": true,
+            "exitCode": 0,
+            "stdout": "",
+            "stderr": "",
+            "completedAt": "2026-06-19T04:36:45.346Z"
+          }
+        },
+        {
+          "id": "step-4",
+          "index": 4,
+          "description": "Render selection toolbar with selected count and Delete icon button when isSelecting is true",
+          "status": "verified",
+          "verification": {
+            "command": "grep -q 'selectedIds' /home/pulse1/WorkTrack/frontend/src/pages/RequestDetailPage.tsx",
+            "retries": 2,
+            "retryDelayMs": 1000
+          },
+          "parallel": false,
+          "startedAt": "2026-06-19T04:36:55.226Z",
+          "completedAt": "2026-06-19T04:37:16.584Z",
+          "result": {
+            "success": true,
+            "exitCode": 0,
+            "stdout": "",
+            "stderr": "",
+            "completedAt": "2026-06-19T04:37:16.584Z"
+          }
+        }
+      ],
+      "startedAt": "2026-06-19T04:30:19.006Z",
+      "completedAt": "2026-06-19T04:37:47.217Z",
+      "summary": "Phase 2 complete. Added selection mode state (isSelecting, selectedIds), canDeleteComment helper, toggleSelection/exitSelectionMode handlers. Chat header shows 'Select' button in normal mode and selection toolbar (close, count, delete icon) in selection mode. Checkboxes render on deletable user comments in selection mode. System comments and non-own comments are excluded. TypeScript compiles cleanly."
+    },
+    {
+      "id": "phase-3",
+      "index": 3,
+      "name": "Frontend delete wiring",
+      "goal": "Wire the bulk delete mutation and clean up state after deletion",
+      "description": "",
+      "parallel": false,
+      "status": "completed",
+      "steps": [
+        {
+          "id": "step-1",
+          "index": 1,
+          "description": "Add useMutation for DELETE /api/requests/{requestId}/comments with body {ids: selectedIds}",
+          "status": "verified",
+          "verification": {
+            "command": "grep -q 'delete.*comment' /home/pulse1/WorkTrack/frontend/src/pages/RequestDetailPage.tsx",
+            "retries": 2,
+            "retryDelayMs": 1000
+          },
+          "parallel": false,
+          "startedAt": "2026-06-19T04:38:45.089Z",
+          "completedAt": "2026-06-19T04:39:58.218Z",
+          "result": {
+            "success": true,
+            "exitCode": 0,
+            "stdout": "",
+            "stderr": "",
+            "completedAt": "2026-06-19T04:39:58.218Z"
+          }
+        },
+        {
+          "id": "step-2",
+          "index": 2,
+          "description": "On delete success: refetch comments, clear selectedIds, set isSelecting false",
+          "status": "verified",
+          "verification": {
+            "command": "grep -q 'setIsSelecting(false)' /home/pulse1/WorkTrack/frontend/src/pages/RequestDetailPage.tsx",
+            "retries": 2,
+            "retryDelayMs": 1000
+          },
+          "parallel": false,
+          "startedAt": "2026-06-19T04:40:14.021Z",
+          "completedAt": "2026-06-19T04:40:48.485Z",
+          "result": {
+            "success": true,
+            "exitCode": 0,
+            "stdout": "",
+            "stderr": "",
+            "completedAt": "2026-06-19T04:40:48.485Z"
+          }
+        }
+      ],
+      "startedAt": "2026-06-19T04:38:33.077Z",
+      "completedAt": "2026-06-19T04:41:28.987Z",
+      "summary": "Phase 3 complete. Added deleteCommentsMutation useMutation calling DELETE /requests/{id}/comments with {ids: [...]} payload. Wired the Delete icon button in the selection toolbar to trigger the mutation. On success, comments are refetched and selection mode exits automatically. TypeScript compiles cleanly."
+    }
+  ],
+  "decisions": [],
+  "memories": [],
+  "createdAt": "2026-06-19T04:21:18.023Z",
+  "updatedAt": "2026-06-19T04:42:45.796Z",
+  "goal": "Add a WhatsApp-style message selection and bulk delete feature to RequestDetailPage so users can select multiple comments and delete them with a toolbar.",
+  "successCriteria": [
+    "Backend DELETE /api/requests/{requestId}/comments accepts a bulk payload {ids: [...]} and validates permissions",
+    "Backend rejects deletion of system comments and comments not owned by the user (unless user is manager)",
+    "Frontend shows a 'Select' button in the messages area header that toggles selection mode",
+    "Checkboxes appear only on deletable message bubbles while in selection mode",
+    "Selection toolbar renders with selected-count label and a Delete icon button",
+    "Clicking Delete calls the bulk endpoint, refreshes the comment list, and exits selection mode",
+    "System comments are never selectable or deletable",
+    "TypeScript compiles with no errors"
+  ],
+  "constraints": [
+    "Only own comments or manager can delete",
+    "System comments are not deletable",
+    "New Request popup due date field styling remains unchanged (from prior work)"
+  ],
+  "lastActiveAt": "2026-06-19T04:38:33.077Z",
+  "grade": {
+    "grade": "B",
+    "rationale": "Verification was largely syntactic—Maven and TypeScript compilation plus grep/code review—without runtime or integration tests that exercise the bulk endpoint or UI flow live. Gate rationales name commands but never cite specific file paths, line numbers, or execution traces, leaving the evidence thinner than an A requires. All three phases appear coherent and complete, but the absent diff and reliance on proxy checks keep this from the highest tier.",
+    "gradedAt": "2026-06-19T04:42:45.794Z"
+  }
+}

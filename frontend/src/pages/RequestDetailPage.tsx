@@ -567,16 +567,6 @@ const RequestDetailPage = () => {
                             >
                               {att.fileName}
                             </Button>
-                            {canDeleteAttachment() && (
-                              <IconButton
-                                size="small"
-                                onClick={() => deleteAttachmentMutation.mutate(att.id)}
-                                disabled={deleteAttachmentMutation.isPending}
-                                sx={{ color: 'var(--error)', '&:hover': { bgcolor: 'rgba(220,38,38,0.08)' }, p: 0.5 }}
-                              >
-                                <DeleteIcon sx={{ fontSize: 16 }} />
-                              </IconButton>
-                            )}
                           </Box>
                         ))}
                       </Box>
