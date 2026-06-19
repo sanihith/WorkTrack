@@ -5,6 +5,7 @@ import com.taskportal.entity.CommentType;
 import com.taskportal.entity.Request;
 import com.taskportal.entity.User;
 import com.taskportal.repository.CommentRepository;
+import com.taskportal.repository.RequestRepository;
 import com.taskportal.repository.UserRepository;
 import com.taskportal.service.NotificationService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,6 +23,9 @@ public class CommentController {
 
     @Autowired
     private CommentRepository commentRepository;
+
+    @Autowired
+    private RequestRepository requestRepository;
 
     @Autowired
     private UserRepository userRepository;
@@ -99,13 +103,8 @@ public class CommentController {
                     continue;
                 }
                 boolean isOwner = comment.getCreatedBy() != null && comment.getCreatedBy().getId().equals(user.getId());
-                boolean isConversationParticipant = false;
-                Request commentRequest = comment.getRequest();
-                if (commentRequest != null) {
-                    boolean isRequester = commentRequest.getCreatedBy() != null && commentRequest.getCreatedBy().getId().equals(user.getId());
-                    boolean isAssignee = commentRequest.getAssignedTo() != null && commentRequest.getAssignedTo().getId().equals(user.getId());
-                    isConversationParticipant = isRequester || isAssignee;
-                }
+                boolean isConversationParticipant = requestRepository.existsByIdAndCreatedById(requestId, user.getId())
+                        || requestRepository.existsByIdAndAssignedToId(requestId, user.getId());
                 if (!isOwner && !isManager && !isConversationParticipant) {
                     skipped++;
                     continue;
