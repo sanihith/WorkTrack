@@ -252,7 +252,7 @@ const TodosTab = () => {
                     </Typography>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
                       <CalendarIcon sx={{ fontSize: 13, color: 'var(--text-muted)' }} />
-                      <DueDateBadge dueDate={todo.requestedByDate} status={todo.status} />
+                      <DueDateBadge dueDate={todo.requestedByDate} />
                     </Box>
                   </Box>
                   <Box sx={{ position: 'absolute', top: 16, right: 12, display: 'flex', gap: 0.5 }}>
@@ -359,7 +359,7 @@ const TodosTab = () => {
                         }}
                       />
                     </TableCell>
-                    <TableCell sx={{ py: 1.5 }}><DueDateBadge dueDate={todo.requestedByDate} status={todo.status} /></TableCell>
+                    <TableCell sx={{ py: 1.5 }}><DueDateBadge dueDate={todo.requestedByDate} /></TableCell>
                     <TableCell sx={{ py: 1.5 }}>
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                         <Avatar sx={{ width: 24, height: 24, fontSize: '0.7rem', bgcolor: 'var(--accent)' }}>{todo.createdBy?.name?.[0]}</Avatar>

@@ -131,7 +131,7 @@ const ImportantTab = () => {
                     </Typography>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                       <CalendarIcon sx={{ fontSize: 14, color: 'text.secondary' }} />
-                      <DueDateBadge dueDate={task.requestedByDate} status={task.status} />
+                      <DueDateBadge dueDate={task.requestedByDate} />
                     </Box>
                   </Box>
                   <Box sx={{ position: 'absolute', top: 12, right: 12, display: 'flex', gap: 0.5 }}>
@@ -215,7 +215,7 @@ const ImportantTab = () => {
                   <TableRow key={task.id} onClick={() => navigate(`/request/${task.id}`)} sx={{ cursor: 'pointer', transition: 'all 0.15s', '&:hover': { bgcolor: 'var(--accent-bg)' }, '&:last-child td': { border: 0 } }}>
                     <TableCell sx={{ py: 1.5 }}><Typography variant="body2" sx={{ fontWeight: 600, color: 'var(--text-h)', fontSize: '0.875rem' }}>{task.subject}</Typography></TableCell>
                     <TableCell sx={{ py: 1.5 }}><Chip label={getStatusLabel(task.status)} size="small" sx={{ fontWeight: 700, fontSize: '0.7rem', borderRadius: 1.5, bgcolor: task.status === 'COMPLETED' ? 'var(--success)' : task.status === 'REJECTED' ? 'var(--error)' : 'var(--accent-bg)', color: task.status === 'COMPLETED' || task.status === 'REJECTED' ? '#fff' : 'var(--text-h)', border: 'none' }} /></TableCell>
-                    <TableCell sx={{ py: 1.5 }}><DueDateBadge dueDate={task.requestedByDate} status={task.status} /></TableCell>
+                    <TableCell sx={{ py: 1.5 }}><DueDateBadge dueDate={task.requestedByDate} /></TableCell>
                     <TableCell sx={{ py: 1.5 }}><Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}><Avatar sx={{ width: 24, height: 24, fontSize: '0.7rem' }}>{task.createdBy?.name?.[0]}</Avatar><Typography variant="caption" sx={{ fontWeight: 500 }}>{task.createdBy?.name}</Typography></Box></TableCell>
                     <TableCell align="right" sx={{ py: 1.5 }}><Box sx={{ display: 'flex', gap: 0.5, justifyContent: 'flex-end' }}><IconButton size="small" onClick={(e) => { e.stopPropagation(); toggleMyDayMutation.mutate(task.id); }} sx={{ color: task.isMyDay ? 'var(--warning)' : 'text.disabled' }}>{task.isMyDay ? <SunIcon sx={{ fontSize: 18 }} /> : <SunOutlinedIcon sx={{ fontSize: 18 }} />}</IconButton><IconButton size="small" onClick={(e) => { e.stopPropagation(); toggleImportantMutation.mutate(task.id); }} sx={{ color: 'var(--warning)' }}><StarIcon sx={{ fontSize: 18 }} /></IconButton></Box></TableCell>
                   </TableRow>

@@ -159,7 +159,7 @@ const RequestedByMeTab = () => {
                     </Typography>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                       <CalendarIcon sx={{ fontSize: 14, color: 'text.secondary' }} />
-                      <DueDateBadge dueDate={req.requestedByDate} status={req.status} />
+                      <DueDateBadge dueDate={req.requestedByDate} />
                     </Box>
                   </Box>
                   <Box sx={{ position: 'absolute', top: 12, right: 12, display: 'flex', gap: 0.5 }}>
@@ -271,7 +271,7 @@ const RequestedByMeTab = () => {
                     />
                   </TableCell>
                   <TableCell>
-                    <DueDateBadge dueDate={req.requestedByDate} status={req.status} />
+                    <DueDateBadge dueDate={req.requestedByDate} />
                   </TableCell>
                   <TableCell>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>

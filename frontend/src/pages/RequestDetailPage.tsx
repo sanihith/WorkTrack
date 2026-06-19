@@ -41,6 +41,7 @@ import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import dayjs from 'dayjs';
 import { getStatusLabel } from '../utils/statusUtils';
+import { getDueDateHeaderStyle, getDueDateSidebarStyle, getDueDateColorStyle } from '../utils/dateUtils';
 
 const RequestDetailPage = () => {
   const { id } = useParams<{ id: string }>();
@@ -275,7 +276,7 @@ const RequestDetailPage = () => {
     return { bgcolor: 'var(--accent-bg)', color: 'var(--accent)', border: 'none' };
   };
 
-  const getDueDateHeaderSx = (status: string) => {
+  const getDueDateHeaderSx = (date: string) => {
     const base = {
       borderRadius: 2,
       '& .MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(255,255,255,0.3)' },
@@ -283,30 +284,11 @@ const RequestDetailPage = () => {
       '& .MuiSvgIcon-root': { color: '#fff' },
       '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(255,255,255,0.5)' }
     };
-
-    switch (status) {
-      case 'COMPLETED':
-        return { ...base, bgcolor: 'rgba(37,211,102,0.2)' };
-      case 'REJECTED':
-        return { ...base, bgcolor: 'rgba(220,38,38,0.2)' };
-      case 'IN_PROGRESS':
-        return { ...base, bgcolor: 'rgba(255,152,0,0.2)' };
-      default:
-        return { ...base, bgcolor: 'rgba(255,255,255,0.15)' };
-    }
+    return { ...base, ...getDueDateHeaderStyle(date) };
   };
 
-  const getDueDateSidebarSx = (status: string) => {
-    switch (status) {
-      case 'COMPLETED':
-        return { mt: 0.5, borderRadius: 2, bgcolor: '#e8f5e9', '& .MuiOutlinedInput-root': { fontSize: '0.85rem', color: '#2e7d32' }, '& .MuiSvgIcon-root': { color: '#2e7d32' } };
-      case 'REJECTED':
-        return { mt: 0.5, borderRadius: 2, bgcolor: '#ffebee', '& .MuiOutlinedInput-root': { fontSize: '0.85rem', color: '#c62828' }, '& .MuiSvgIcon-root': { color: '#c62828' } };
-      case 'IN_PROGRESS':
-        return { mt: 0.5, borderRadius: 2, bgcolor: '#fff3e0', '& .MuiOutlinedInput-root': { fontSize: '0.85rem', color: '#ef6c00' }, '& .MuiSvgIcon-root': { color: '#ef6c00' } };
-      default:
-        return { mt: 0.5, borderRadius: 2, '& .MuiOutlinedInput-root': { fontSize: '0.85rem' } };
-    }
+  const getDueDateSidebarSx = (date: string) => {
+    return { mt: 0.5, borderRadius: 2, ...getDueDateSidebarStyle(date) };
   };
 
   return (
@@ -385,13 +367,13 @@ const RequestDetailPage = () => {
                       slotProps={{
                         textField: {
                           size: 'small',
-                          sx: getDueDateHeaderSx(request.status)
+                          sx: getDueDateHeaderSx(request.requestedByDate)
                         }
                       }}
                     />
                   </LocalizationProvider>
                 ) : (
-                  <DueDateBadge dueDate={request.requestedByDate} status={request.status} />
+                  <DueDateBadge dueDate={request.requestedByDate} />
                 )}
               </Stack>
             </Box>
@@ -859,7 +841,7 @@ const RequestDetailPage = () => {
                             slotProps={{
                               textField: {
                                 size: 'small',
-                                sx: getDueDateSidebarSx(request.status)
+                                sx: getDueDateSidebarSx(request.requestedByDate)
                               }
                             }}
                           />
@@ -876,10 +858,7 @@ const RequestDetailPage = () => {
                               px: 1,
                               py: 0.5,
                               borderRadius: 1,
-                              ...(request.status === 'COMPLETED' ? { bgcolor: '#e8f5e9', color: '#2e7d32' } :
-                                  request.status === 'REJECTED' ? { bgcolor: '#ffebee', color: '#c62828' } :
-                                  request.status === 'IN_PROGRESS' ? { bgcolor: '#fff3e0', color: '#ef6c00' } :
-                                  { color: 'var(--text-h)' })
+                              ...getDueDateColorStyle(request.requestedByDate)
                             } : { color: 'var(--text-h)' })
                           }}>
                             {item.value}
