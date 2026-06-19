@@ -109,12 +109,6 @@ const RequestDetailPage = () => {
     setMenuMessage(null);
   };
 
-  const { data: allUsers = [] } = useQuery({
-    queryKey: ['users'],
-    queryFn: () => apiClient.get('/users').then(res => res.data),
-    enabled: isManager
-  });
-
   useEffect(() => {
     if (scrollRef.current) {
       scrollRef.current.scrollIntoView({ behavior: 'smooth' });
@@ -129,18 +123,6 @@ const RequestDetailPage = () => {
       queryClient.setQueryData(['request', id], updatedRequest);
       await queryClient.invalidateQueries({ queryKey: ['request', id], refetchType: 'active' });
       await queryClient.refetchQueries({ queryKey: ['request', id] });
-    }
-  });
-
-  const reassignMutation = useMutation({
-    mutationFn: (userId: number) =>
-      apiClient.put(`/requests/${id}`, { assignedTo: { id: userId } }),
-    onSuccess: (response) => {
-      const updatedRequest = response.data;
-      if (updatedRequest) {
-        queryClient.setQueryData(['request', id], updatedRequest);
-      }
-      queryClient.invalidateQueries({ queryKey: ['request', id] });
     }
   });
 
@@ -391,36 +373,6 @@ const RequestDetailPage = () => {
 
             {canManageRequest && (
               <Stack direction="row" spacing={1.5} sx={{ flexShrink: 0 }}>
-                {isManager && (
-                  <FormControl size="small" sx={{ minWidth: 150 }}>
-                    <Select
-                      value={request.assignedTo?.id ?? ''}
-                      onChange={(e) => reassignMutation.mutate(Number(e.target.value))}
-                      displayEmpty
-                      sx={{
-                        borderRadius: 2,
-                        bgcolor: 'rgba(255,255,255,0.15)',
-                        color: '#fff',
-                        fontSize: '0.85rem',
-                        '& .MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(255,255,255,0.3)' },
-                        '& .MuiSvgIcon-root': { color: '#fff' },
-                        '& .MuiSelect-select': { py: 1 },
-                        '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(255,255,255,0.5)' },
-                        '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: '#fff' }
-                      }}
-                      renderValue={(val) => {
-                        const u = allUsers.find((a: any) => a.id === val);
-                        return u ? u.name : <em style={{ opacity: 0.7 }}>Unassigned</em>;
-                      }}
-                    >
-                      <MenuItem value=""><em>Unassigned</em></MenuItem>
-                      {allUsers.map((u: any) => (
-                        <MenuItem key={u.id} value={u.id} sx={{ fontSize: '0.85rem' }}>{u.name}</MenuItem>
-                      ))}
-                    </Select>
-                  </FormControl>
-                )}
-
                 <FormControl size="small" sx={{ minWidth: 140 }}>
                   <Select
                     value={selectedStatus || request.status}
