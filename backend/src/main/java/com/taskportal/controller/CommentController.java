@@ -99,7 +99,14 @@ public class CommentController {
                     continue;
                 }
                 boolean isOwner = comment.getCreatedBy() != null && comment.getCreatedBy().getId().equals(user.getId());
-                if (!isOwner && !isManager) {
+                boolean isConversationParticipant = false;
+                Request commentRequest = comment.getRequest();
+                if (commentRequest != null) {
+                    boolean isRequester = commentRequest.getCreatedBy() != null && commentRequest.getCreatedBy().getId().equals(user.getId());
+                    boolean isAssignee = commentRequest.getAssignedTo() != null && commentRequest.getAssignedTo().getId().equals(user.getId());
+                    isConversationParticipant = isRequester || isAssignee;
+                }
+                if (!isOwner && !isManager && !isConversationParticipant) {
                     skipped++;
                     continue;
                 }

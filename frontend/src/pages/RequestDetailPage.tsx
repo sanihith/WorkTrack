@@ -83,8 +83,11 @@ const RequestDetailPage = () => {
 
   const canDeleteComment = (msg: any) => {
     if (msg.type === 'SYSTEM') return false;
-    if (!user) return false;
+    if (!user || !request) return false;
     if (isManager) return true;
+    // Both conversation participants (requester and assignee) can delete any user message
+    const isParticipant = request.createdBy?.id === user.id || request.assignedTo?.id === user.id;
+    if (isParticipant) return true;
     return msg.createdBy?.id === user.id;
   };
 
