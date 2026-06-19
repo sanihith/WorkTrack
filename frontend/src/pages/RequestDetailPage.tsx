@@ -72,6 +72,12 @@ const RequestDetailPage = () => {
   const [menuAnchor, setMenuAnchor] = useState<null | HTMLElement>(null);
   const [menuMessage, setMenuMessage] = useState<any>(null);
   const [replyingTo, setReplyingTo] = useState<{ id: number; name: string; content: string } | null>(null);
+  const [now, setNow] = useState(Date.now());
+
+  useEffect(() => {
+    const interval = setInterval(() => setNow(Date.now()), 10000);
+    return () => clearInterval(interval);
+  }, []);
 
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -550,7 +556,7 @@ const RequestDetailPage = () => {
               </Box>
 
               {/* Comments */}
-              {comments.map((msg: any) => {
+              {comments.filter((msg: any) => msg.type !== 'SYSTEM' || (now - new Date(msg.createdAt).getTime()) < 120000).map((msg: any) => {
                 if (msg.type === 'SYSTEM') {
                   return (
                     <Box key={msg.id} sx={{ py: 1.5, textAlign: 'center', position: 'relative' }}>
