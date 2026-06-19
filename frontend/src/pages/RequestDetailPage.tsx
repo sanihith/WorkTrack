@@ -820,7 +820,19 @@ const RequestDetailPage = () => {
                           <Avatar sx={{ width: 26, height: 26, fontSize: '0.75rem', bgcolor: 'var(--accent-bg)', color: 'var(--accent)' }}>
                             {item.avatar}
                           </Avatar>
-                          <Typography sx={{ fontWeight: 600, color: 'var(--text-h)', fontSize: '0.875rem' }}>
+                          <Typography sx={{
+                            fontWeight: 600,
+                            fontSize: '0.875rem',
+                            ...(item.date ? {
+                              px: 1,
+                              py: 0.5,
+                              borderRadius: 1,
+                              ...(request.status === 'COMPLETED' ? { bgcolor: '#e8f5e9', color: '#2e7d32' } :
+                                  request.status === 'REJECTED' ? { bgcolor: '#ffebee', color: '#c62828' } :
+                                  request.status === 'IN_PROGRESS' ? { bgcolor: '#fff3e0', color: '#ef6c00' } :
+                                  { color: 'var(--text-h)' })
+                            } : { color: 'var(--text-h)' })
+                          }}>
                             {item.value}
                           </Typography>
                         </Box>
