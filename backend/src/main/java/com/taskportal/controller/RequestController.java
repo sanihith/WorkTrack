@@ -1,11 +1,14 @@
 package com.taskportal.controller;
 
 import com.taskportal.entity.Request;
+import com.taskportal.entity.User;
+import com.taskportal.repository.UserRepository;
 import com.taskportal.service.RequestService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -18,6 +21,9 @@ public class RequestController {
 
     @Autowired
     private RequestService requestService;
+
+    @Autowired
+    private UserRepository userRepository;
 
     @PostMapping
     @PreAuthorize("hasAnyRole('EMPLOYEE', 'MANAGER', 'DIRECTOR', 'ADMIN')")
@@ -105,8 +111,31 @@ public class RequestController {
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN')")
-    public ResponseEntity<Void> delete(@PathVariable Long id) {
+    public ResponseEntity<Void> delete(@PathVariable Long id, Authentication authentication) {
+        String email = authentication.getName();
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        boolean isAdmin = user.getRole() != null && user.getRole().equals("ADMIN");
+        boolean isManager = user.getRole() != null && (
+                user.getRole().equals("MANAGER") ||
+                user.getRole().equals("DIRECTOR") ||
+                user.getRole().equals("ADMIN"));
+
+        java.util.Optional<Request> existingOpt = requestService.findById(id);
+        if (existingOpt.isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
+        Request existing = existingOpt.get();
+
+        boolean isOwner = existing.getCreatedBy() != null && existing.getCreatedBy().getId().equals(user.getId());
+        boolean isAssignee = existing.getAssignedTo() != null && existing.getAssignedTo().getId().equals(user.getId());
+        boolean isParticipant = isOwner || isAssignee || isManager || isAdmin;
+
+        if (!isParticipant) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
+
         requestService.delete(id);
         return ResponseEntity.noContent().build();
     }

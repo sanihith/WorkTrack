@@ -191,6 +191,17 @@ const RequestDetailPage = () => {
     }
   });
 
+  const deleteRequestMutation = useMutation({
+    mutationFn: () => apiClient.delete(`/requests/${id}`),
+    onSuccess: () => {
+      navigate('/dashboard');
+    },
+    onError: (err: any) => {
+      console.error('Delete request failed:', err);
+      alert('Failed to delete request. Please try again.');
+    }
+  });
+
   const handleStatusChange = async (newStatus: string) => {
     setSelectedStatus(newStatus);
     try {
@@ -989,6 +1000,19 @@ const RequestDetailPage = () => {
               >
                 <DeleteIcon sx={{ fontSize: 18 }} />
                 Delete
+              </MenuItem>
+            )}
+            {menuMessage.id < 0 && canDeleteAttachment() && (
+              <MenuItem
+                onClick={() => {
+                  deleteRequestMutation.mutate();
+                  closeMessageMenu();
+                }}
+                disabled={deleteRequestMutation.isPending}
+                sx={{ fontSize: '0.85rem', color: 'var(--error)', gap: 1, minWidth: 140 }}
+              >
+                <DeleteIcon sx={{ fontSize: 18 }} />
+                Delete Request
               </MenuItem>
             )}
           </>
