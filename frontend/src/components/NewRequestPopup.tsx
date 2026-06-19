@@ -54,19 +54,6 @@ const NewRequestPopup = ({ open, onClose, initialAssignedToEmail }: NewRequestPo
     }
   }, [open, user, initialAssignedToEmail]);
 
-  const getDateStyle = (date: string) => {
-    if (!date) return {};
-    const d = dayjs(date);
-    const today = dayjs().startOf('day');
-    const diff = d.diff(today, 'day');
-
-    if (diff < 0) return { bgcolor: '#ffebee', color: '#c62828' };
-    if (diff === 0) return { bgcolor: '#f44336', color: '#fff' };
-    if (diff === 1) return { bgcolor: '#ff9800', color: '#fff' };
-    if (diff <= 3) return { bgcolor: '#fff3e0', color: '#ef6c00' };
-    return { bgcolor: '#e8f5e9', color: '#2e7d32' };
-  };
-
   const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
       setFiles(prev => [...prev, ...Array.from(e.target.files!)]);
@@ -227,7 +214,7 @@ const NewRequestPopup = ({ open, onClose, initialAssignedToEmail }: NewRequestPo
               display: 'flex',
               alignItems: 'center',
               gap: 1,
-              ...(formData.requestedByDate ? getDateStyle(formData.requestedByDate) : { bgcolor: 'var(--accent-bg)', color: 'var(--text-h)' })
+              ...{ bgcolor: 'var(--accent-bg)', color: 'var(--text-h)' }
             }}>
               <DateRangeIcon sx={{ fontSize: 20, opacity: 0.8 }} />
               <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
