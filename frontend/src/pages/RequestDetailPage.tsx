@@ -70,7 +70,7 @@ const RequestDetailPage = () => {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [menuAnchor, setMenuAnchor] = useState<null | HTMLElement>(null);
-  const [menuMsgId, setMenuMsgId] = useState<number | null>(null);
+  const [menuMessage, setMenuMessage] = useState<any>(null);
   const [replyingTo, setReplyingTo] = useState<{ id: number; name: string; content: string } | null>(null);
 
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -82,15 +82,15 @@ const RequestDetailPage = () => {
     return msg.createdBy?.id === user.id;
   };
 
-  const openMessageMenu = (event: React.MouseEvent<HTMLElement>, msgId: number) => {
+  const openMessageMenu = (event: React.MouseEvent<HTMLElement>, msg: any) => {
     event.stopPropagation();
     setMenuAnchor(event.currentTarget);
-    setMenuMsgId(msgId);
+    setMenuMessage(msg);
   };
 
   const closeMessageMenu = () => {
     setMenuAnchor(null);
-    setMenuMsgId(null);
+    setMenuMessage(null);
   };
 
   const { data: allUsers = [] } = useQuery({
@@ -156,6 +156,10 @@ const RequestDetailPage = () => {
     onSuccess: () => {
       refetchComments();
       setReplyingTo(null);
+    },
+    onError: (err: any) => {
+      console.error('Delete failed:', err);
+      alert('Failed to delete message. Please try again.');
     }
   });
 
@@ -591,7 +595,7 @@ const RequestDetailPage = () => {
                       >
                         <IconButton
                           size="small"
-                          onClick={(e) => openMessageMenu(e, msg.id)}
+                          onClick={(e) => openMessageMenu(e, msg)}
                           sx={{
                             position: 'absolute',
                             top: 4,
@@ -904,36 +908,33 @@ const RequestDetailPage = () => {
         transformOrigin={{ vertical: 'top', horizontal: 'right' }}
         PaperProps={{ sx: { borderRadius: 2, boxShadow: '0 4px 20px rgba(0,0,0,0.15)' } }}
       >
-        {(() => {
-          const msg = comments.find((m: any) => m.id === menuMsgId);
-          if (!msg) return null;
-          return (
-            <>
+        {menuMessage && (
+          <>
+            <MenuItem
+              onClick={() => {
+                setReplyingTo({ id: menuMessage.id, name: menuMessage.createdBy?.name || 'Unknown', content: menuMessage.content });
+                closeMessageMenu();
+              }}
+              sx={{ fontSize: '0.85rem', gap: 1, minWidth: 140 }}
+            >
+              <ArrowBackIcon sx={{ fontSize: 18, transform: 'rotate(90deg)' }} />
+              Reply
+            </MenuItem>
+            {canDeleteComment(menuMessage) && (
               <MenuItem
                 onClick={() => {
-                  setReplyingTo({ id: msg.id, name: msg.createdBy?.name || 'Unknown', content: msg.content });
+                  deleteCommentsMutation.mutate([menuMessage.id]);
                   closeMessageMenu();
                 }}
-                sx={{ fontSize: '0.85rem', gap: 1, minWidth: 140 }}
+                disabled={deleteCommentsMutation.isPending}
+                sx={{ fontSize: '0.85rem', color: 'var(--error)', gap: 1, minWidth: 140 }}
               >
-                <ArrowBackIcon sx={{ fontSize: 18, transform: 'rotate(90deg)' }} />
-                Reply
+                <DeleteIcon sx={{ fontSize: 18 }} />
+                Delete
               </MenuItem>
-              {canDeleteComment(msg) && (
-                <MenuItem
-                  onClick={() => {
-                    deleteCommentsMutation.mutate([msg.id]);
-                    closeMessageMenu();
-                  }}
-                  sx={{ fontSize: '0.85rem', color: 'var(--error)', gap: 1, minWidth: 140 }}
-                >
-                  <DeleteIcon sx={{ fontSize: 18 }} />
-                  Delete
-                </MenuItem>
-              )}
-            </>
-          );
-        })()}
+            )}
+          </>
+        )}
       </Menu>
     </DashboardLayout>
   );

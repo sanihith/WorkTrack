@@ -10,6 +10,7 @@ import com.taskportal.service.NotificationService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.*;
@@ -62,6 +63,7 @@ public class CommentController {
     }
 
     @DeleteMapping
+    @Transactional
     public ResponseEntity<Map<String, Object>> deleteComments(
             @PathVariable Long requestId,
             @RequestBody BulkDeleteCommentsRequest payload,
@@ -81,27 +83,32 @@ public class CommentController {
         int skipped = 0;
 
         for (Long commentId : ids) {
-            Optional<Comment> opt = commentRepository.findById(commentId);
-            if (opt.isEmpty()) {
+            try {
+                Optional<Comment> opt = commentRepository.findById(commentId);
+                if (opt.isEmpty()) {
+                    skipped++;
+                    continue;
+                }
+                Comment comment = opt.get();
+                if (comment.getRequest() == null || !comment.getRequest().getId().equals(requestId)) {
+                    skipped++;
+                    continue;
+                }
+                if (comment.getType() == CommentType.SYSTEM) {
+                    skipped++;
+                    continue;
+                }
+                boolean isOwner = comment.getCreatedBy() != null && comment.getCreatedBy().getId().equals(user.getId());
+                if (!isOwner && !isManager) {
+                    skipped++;
+                    continue;
+                }
+                commentRepository.delete(comment);
+                deleted++;
+            } catch (Exception e) {
+                System.err.println("Failed to delete comment " + commentId + ": " + e.getMessage());
                 skipped++;
-                continue;
             }
-            Comment comment = opt.get();
-            if (comment.getRequest() == null || !comment.getRequest().getId().equals(requestId)) {
-                skipped++;
-                continue;
-            }
-            if (comment.getType() == CommentType.SYSTEM) {
-                skipped++;
-                continue;
-            }
-            boolean isOwner = comment.getCreatedBy() != null && comment.getCreatedBy().getId().equals(user.getId());
-            if (!isOwner && !isManager) {
-                skipped++;
-                continue;
-            }
-            commentRepository.deleteById(commentId);
-            deleted++;
         }
 
         Map<String, Object> result = new HashMap<>();
