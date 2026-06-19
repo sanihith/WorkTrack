@@ -91,6 +91,12 @@ const RequestDetailPage = () => {
     return msg.createdBy?.id === user.id;
   };
 
+  const canDeleteAttachment = () => {
+    if (!user || !request) return false;
+    if (isManager) return true;
+    return request.createdBy?.id === user.id || request.assignedTo?.id === user.id;
+  };
+
   const openMessageMenu = (event: React.MouseEvent<HTMLElement>, msg: any) => {
     event.stopPropagation();
     setMenuAnchor(event.currentTarget);
@@ -169,6 +175,18 @@ const RequestDetailPage = () => {
     onError: (err: any) => {
       console.error('Delete failed:', err);
       alert('Failed to delete message. Please try again.');
+    }
+  });
+
+  const deleteAttachmentMutation = useMutation({
+    mutationFn: (attachmentId: number) =>
+      apiClient.delete(`/attachments/${attachmentId}`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['request', id] });
+    },
+    onError: (err: any) => {
+      console.error('Delete attachment failed:', err);
+      alert('Failed to delete attachment. Please try again.');
     }
   });
 
@@ -530,24 +548,36 @@ const RequestDetailPage = () => {
                     {request.attachments?.length > 0 && (
                       <Box sx={{ mt: 1.5, display: 'flex', flexDirection: 'column', gap: 0.75 }}>
                         {request.attachments.map((att: any) => (
-                          <Button
-                            key={att.id}
-                            size="small"
-                            variant="outlined"
-                            startIcon={<AttachFile sx={{ fontSize: 14 }} />}
-                            onClick={() => downloadAttachment(att.id, att.fileName)}
-                            sx={{
-                              borderRadius: 2,
-                              textTransform: 'none',
-                              fontSize: '0.75rem',
-                              justifyContent: 'flex-start',
-                              borderColor: 'var(--border)',
-                              color: 'var(--accent)',
-                              '&:hover': { borderColor: 'var(--accent)', bgcolor: 'var(--accent-bg)' }
-                            }}
-                          >
-                            {att.fileName}
-                          </Button>
+                          <Box key={att.id} sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                            <Button
+                              size="small"
+                              variant="outlined"
+                              startIcon={<AttachFile sx={{ fontSize: 14 }} />}
+                              onClick={() => downloadAttachment(att.id, att.fileName)}
+                              fullWidth
+                              sx={{
+                                borderRadius: 2,
+                                textTransform: 'none',
+                                fontSize: '0.75rem',
+                                justifyContent: 'flex-start',
+                                borderColor: 'var(--border)',
+                                color: 'var(--accent)',
+                                '&:hover': { borderColor: 'var(--accent)', bgcolor: 'var(--accent-bg)' }
+                              }}
+                            >
+                              {att.fileName}
+                            </Button>
+                            {canDeleteAttachment() && (
+                              <IconButton
+                                size="small"
+                                onClick={() => deleteAttachmentMutation.mutate(att.id)}
+                                disabled={deleteAttachmentMutation.isPending}
+                                sx={{ color: 'var(--error)', '&:hover': { bgcolor: 'rgba(220,38,38,0.08)' }, p: 0.5 }}
+                              >
+                                <DeleteIcon sx={{ fontSize: 16 }} />
+                              </IconButton>
+                            )}
+                          </Box>
                         ))}
                       </Box>
                     )}
@@ -628,23 +658,35 @@ const RequestDetailPage = () => {
                         {msg.attachments?.length > 0 && (
                           <Box sx={{ mt: 1, display: 'flex', flexDirection: 'column', gap: 0.5 }}>
                             {msg.attachments.map((att: any) => (
-                              <Button
-                                key={att.id}
-                                size="small"
-                                variant="outlined"
-                                startIcon={<Download sx={{ fontSize: 14 }} />}
-                                onClick={() => downloadAttachment(att.id, att.fileName)}
-                                sx={{
-                                  borderRadius: 2,
-                                  textTransform: 'none',
-                                  fontSize: '0.75rem',
-                                  color: isSelf ? '#fff' : 'var(--accent)',
-                                  borderColor: isSelf ? 'rgba(255,255,255,0.4)' : 'var(--border)',
-                                  '&:hover': { borderColor: isSelf ? '#fff' : 'var(--accent)', bgcolor: isSelf ? 'rgba(255,255,255,0.1)' : 'var(--accent-bg)' }
-                                }}
-                              >
-                                {att.fileName}
-                              </Button>
+                              <Box key={att.id} sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                                <Button
+                                  size="small"
+                                  variant="outlined"
+                                  startIcon={<Download sx={{ fontSize: 14 }} />}
+                                  onClick={() => downloadAttachment(att.id, att.fileName)}
+                                  fullWidth
+                                  sx={{
+                                    borderRadius: 2,
+                                    textTransform: 'none',
+                                    fontSize: '0.75rem',
+                                    color: isSelf ? '#fff' : 'var(--accent)',
+                                    borderColor: isSelf ? 'rgba(255,255,255,0.4)' : 'var(--border)',
+                                    '&:hover': { borderColor: isSelf ? '#fff' : 'var(--accent)', bgcolor: isSelf ? 'rgba(255,255,255,0.1)' : 'var(--accent-bg)' }
+                                  }}
+                                >
+                                  {att.fileName}
+                                </Button>
+                                {canDeleteAttachment() && (
+                                  <IconButton
+                                    size="small"
+                                    onClick={() => deleteAttachmentMutation.mutate(att.id)}
+                                    disabled={deleteAttachmentMutation.isPending}
+                                    sx={{ color: isSelf ? '#fff' : 'var(--error)', '&:hover': { bgcolor: isSelf ? 'rgba(255,255,255,0.15)' : 'rgba(220,38,38,0.08)' }, p: 0.5 }}
+                                  >
+                                    <DeleteIcon sx={{ fontSize: 16 }} />
+                                  </IconButton>
+                                )}
+                              </Box>
                             ))}
                           </Box>
                         )}
@@ -902,13 +944,25 @@ const RequestDetailPage = () => {
                             </Typography>
                           )}
                         </Box>
-                        <IconButton
-                          size="small"
-                          onClick={() => downloadAttachment(att.id, att.fileName)}
-                          sx={{ color: 'var(--accent)', '&:hover': { bgcolor: 'var(--accent-bg)' }, flexShrink: 0 }}
-                        >
-                          <Download fontSize="small" />
-                        </IconButton>
+                        <Box sx={{ display: 'flex', gap: 0.5 }}>
+                          <IconButton
+                            size="small"
+                            onClick={() => downloadAttachment(att.id, att.fileName)}
+                            sx={{ color: 'var(--accent)', '&:hover': { bgcolor: 'var(--accent-bg)' }, flexShrink: 0 }}
+                          >
+                            <Download fontSize="small" />
+                          </IconButton>
+                          {canDeleteAttachment() && (
+                            <IconButton
+                              size="small"
+                              onClick={() => deleteAttachmentMutation.mutate(att.id)}
+                              disabled={deleteAttachmentMutation.isPending}
+                              sx={{ color: 'var(--error)', '&:hover': { bgcolor: 'rgba(220,38,38,0.08)' }, flexShrink: 0 }}
+                            >
+                              <DeleteIcon sx={{ fontSize: 18 }} />
+                            </IconButton>
+                          )}
+                        </Box>
                       </Box>
                     ))}
                   </Stack>
